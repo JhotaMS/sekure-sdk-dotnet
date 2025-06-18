@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Reflection;
 
-namespace Sekure.Runtime.Security;
+namespace Sekure.Security;
 
 public class EncryptedJsonConverter<T> : JsonConverter
 {

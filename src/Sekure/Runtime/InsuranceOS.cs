@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Sekure.Models;
 using Sekure.Models.RiskValidator;
-using Sekure.Runtime.Security;
+using Sekure.Security;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;

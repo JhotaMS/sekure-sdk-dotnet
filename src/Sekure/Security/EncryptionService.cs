@@ -3,9 +3,9 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Sekure.Runtime.Security;
+namespace Sekure.Security;
 
-public class EncryptionService
+public class EncryptionService : IEncryptionService
 {
     private readonly string _key;
     private readonly string _iv;
