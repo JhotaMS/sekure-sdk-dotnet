@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Sekure.Configurations;
 using Sekure.Models;
 using Sekure.Models.RiskValidator;
 using Sekure.Security;
@@ -25,22 +27,19 @@ public class InsuranceOS : IInsuranceOS
         string apiUrl
         , string apiKey
         , HttpClient client
-        , bool useEncryption = false
-        , string encryptionKey = null
-        , string encryptionIv = null
+        , IOptions<EncryptionOptions> encryption
     )
     {
         this.apiUrl = apiUrl;
         this.apiKey = apiKey;
 
         _client = client;
-        _useEncryption = useEncryption;
+        _useEncryption = encryption.Value.Active;
 
         if (_useEncryption)
         {
             _encryptionService = new EncryptionService(
-                encryptionKey
-                , encryptionIv
+                encryption
             );
         }
     }
@@ -50,9 +49,7 @@ public class InsuranceOS : IInsuranceOS
         , string apiKey
         , string clientIpAddress
         , HttpClient client
-        , bool useEncryption = false
-        , string encryptionKey = null
-        , string encryptionIv = null
+        , IOptions<EncryptionOptions> encryption
     )
     {
         this.apiUrl = apiUrl;
@@ -60,13 +57,12 @@ public class InsuranceOS : IInsuranceOS
         this.clientIpAddress = clientIpAddress;
 
         _client = client;
-        _useEncryption = useEncryption;
+        _useEncryption = encryption.Value.Active;
 
         if (_useEncryption)
         {
             _encryptionService = new EncryptionService(
-                encryptionKey
-                , encryptionIv
+                encryption
             );
         }
     }
