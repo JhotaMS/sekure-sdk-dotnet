@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Options;
+using Sekure.Configurations;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -10,13 +12,15 @@ public class EncryptionService : IEncryptionService
     private readonly string _key;
     private readonly string _iv;
 
-    public EncryptionService(string key, string iv)
+    public EncryptionService(
+        IOptions<EncryptionOptions> encryption
+    )
     {
-        if (key.Length != 32 || iv.Length != 16)
-            throw new ArgumentException("Key must be 32 characters, IV must be 16 characters");
+        _key = encryption.Value.Key;
+        _iv = encryption.Value.Iv;
 
-        _key = key;
-        _iv = iv;
+        if (_key.Length != 32 || _iv.Length != 16)
+            throw new ArgumentException("Key must be 32 characters, IV must be 16 characters");
     }
 
     public string Encrypt(string plainText)
