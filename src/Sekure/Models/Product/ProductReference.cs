@@ -11,7 +11,14 @@
 
         public ProductReference() { }
 
-        public ProductReference(int id, string name, string policyTypeName, string insuranceCompanyName, string productCover, string devoleperGuide)
+        public ProductReference(
+            int id
+            , string name
+            , string policyTypeName
+            , string insuranceCompanyName
+            , string productCover
+            , string devoleperGuide
+        )
         {
             Id = id;
             Name = name;

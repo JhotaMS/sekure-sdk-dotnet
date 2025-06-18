@@ -1,29 +1,74 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Net.Http;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Sekure.Models;
-using System.Text;
-using System;
 using Sekure.Models.RiskValidator;
+using Sekure.Runtime.Security;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Sekure.Runtime
 {
     public class InsuranceOS : IInsuranceOS
     {
-        private string apiUrl = string.Empty;
-        private string apiKey = string.Empty;
-        private string clientIpAddress = string.Empty;
-        private HttpClient _client;
+        private readonly string apiUrl = string.Empty;
+        private readonly string apiKey = string.Empty;
+        private readonly string clientIpAddress = string.Empty;
+        private readonly EncryptionService _encryptionService;
+        private readonly bool _useEncryption;
+        private readonly HttpClient _client;
 
-        public InsuranceOS(string apiUrl, string apiKey, HttpClient client)
+        public InsuranceOS(
+            string apiUrl
+            , string apiKey
+            , HttpClient client
+            , bool useEncryption = false
+            , string encryptionKey = null
+            , string encryptionIv = null
+        )
         {
             this.apiUrl = apiUrl;
             this.apiKey = apiKey;
+
             _client = client;
+            _useEncryption = useEncryption;
+
+            if (_useEncryption)
+            {
+                _encryptionService = new EncryptionService(encryptionKey, encryptionIv);
+            }
         }
-        
-        public InsuranceOS(string apiUrl, string apiKey, string clientIpAddress, HttpClient client)
+
+        public InsuranceOS(
+            string apiUrl
+            , string apiKey
+            , string clientIpAddress
+            , HttpClient client
+            , bool useEncryption = false
+            , string encryptionKey = null
+            , string encryptionIv = null
+        )
+        {
+            this.apiUrl = apiUrl;
+            this.apiKey = apiKey;
+            this.clientIpAddress = clientIpAddress;
+
+            _client = client;
+            _useEncryption = useEncryption;
+
+            if (_useEncryption)
+            {
+                _encryptionService = new EncryptionService(encryptionKey, encryptionIv);
+            }
+        }
+
+        public InsuranceOS(
+            string apiUrl
+            , string apiKey
+            , string clientIpAddress
+            , HttpClient client
+        )
         {
             this.apiUrl = apiUrl;
             this.apiKey = apiKey;
@@ -42,20 +87,24 @@ namespace Sekure.Runtime
 
         public async Task<List<ProductReference>> GetProducts()
         {
-            HttpResponseMessage response = await GetClient().GetAsync($"{apiUrl}/Products");
+            HttpResponseMessage response = await
+                GetClient()
+                .GetAsync($"{apiUrl}/Products");
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
+                throw new Exception(
+                    $"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}"
+                );
             }
 
             string productsJson = await response.Content.ReadAsStringAsync();
 
-            List<ProductReference> products = JsonConvert.DeserializeObject<List<ProductReference>>(productsJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
+
+            List<ProductReference> products = _useEncryption
+                ? JsonConvert.DeserializeObject<List<ProductReference>>(productsJson, new EncryptedJsonConverter<QuotedProduct>(_encryptionService, false))
+                : JsonConvert.DeserializeObject<List<ProductReference>>(productsJson, new JsonSerializerSettings
+                { NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore });
 
             return products;
         }
@@ -72,11 +121,10 @@ namespace Sekure.Runtime
 
             string productResponseJson = await response.Content.ReadAsStringAsync();
 
-            Product product = JsonConvert.DeserializeObject<Product>(productResponseJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
+            Product product = _useEncryption
+                ? JsonConvert.DeserializeObject<Product>(productResponseJson, new EncryptedJsonConverter<QuotedProduct>(_encryptionService, false))
+                : JsonConvert.DeserializeObject<Product>(productResponseJson, new JsonSerializerSettings
+                { NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore });
 
             return product;
         }
@@ -91,18 +139,19 @@ namespace Sekure.Runtime
             }
             string productResponseJson = await response.Content.ReadAsStringAsync();
 
-            Product product = JsonConvert.DeserializeObject<Product>(productResponseJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
+            Product product = _useEncryption
+                ? JsonConvert.DeserializeObject<Product>(productResponseJson, new EncryptedJsonConverter<QuotedProduct>(_encryptionService, false))
+                : JsonConvert.DeserializeObject<Product>(productResponseJson, new JsonSerializerSettings
+                { NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore });
 
             return product;
         }
 
         public async Task<QuotedProduct> Quote(ExecutableProduct executableProduct)
         {
-            string jsonProduct = JsonConvert.SerializeObject(executableProduct);
+            string jsonProduct = _useEncryption
+                ? JsonConvert.SerializeObject(executableProduct, new EncryptedJsonConverter<ExecutableProduct>(_encryptionService, true))
+                : JsonConvert.SerializeObject(executableProduct);
 
             HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/Products/Quote", new StringContent(jsonProduct, Encoding.UTF8, "application/json"));
 
@@ -112,18 +161,20 @@ namespace Sekure.Runtime
             }
 
             string quotedProductJson = await response.Content.ReadAsStringAsync();
-            QuotedProduct quotedProduct = JsonConvert.DeserializeObject<QuotedProduct>(quotedProductJson, new JsonSerializerSettings 
-            { 
-                NullValueHandling = NullValueHandling.Ignore, 
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
+
+            QuotedProduct quotedProduct = _useEncryption
+                ? JsonConvert.DeserializeObject<QuotedProduct>(quotedProductJson, new EncryptedJsonConverter<QuotedProduct>(_encryptionService, false))
+                : JsonConvert.DeserializeObject<QuotedProduct>(quotedProductJson, new JsonSerializerSettings
+                { NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore });
 
             return quotedProduct;
         }
 
         public async Task<Policy> Confirm(ExecutableProduct executableProduct, Guid sessionId)
         {
-            string jsonProduct = JsonConvert.SerializeObject(executableProduct);
+            string jsonProduct = _useEncryption
+                ? JsonConvert.SerializeObject(executableProduct, new EncryptedJsonConverter<ExecutableProduct>(_encryptionService, true))
+                : JsonConvert.SerializeObject(executableProduct);
 
             HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/Products/Confirm/{sessionId}", new StringContent(jsonProduct, Encoding.UTF8, "application/json"));
 
@@ -133,11 +184,11 @@ namespace Sekure.Runtime
             }
 
             string confirmedProductJson = await response.Content.ReadAsStringAsync();
-            Policy policy = JsonConvert.DeserializeObject<Policy>(confirmedProductJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
+
+            Policy policy = _useEncryption
+                ? JsonConvert.DeserializeObject<Policy>(confirmedProductJson, new EncryptedJsonConverter<QuotedProduct>(_encryptionService, false))
+                : JsonConvert.DeserializeObject<Policy>(confirmedProductJson, new JsonSerializerSettings
+                { NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore });
 
             return policy;
         }
@@ -145,7 +196,9 @@ namespace Sekure.Runtime
         [Obsolete("This property is obsolete. Use EmitWithPolicy instead.", false)]
         public async Task<string> Emit(ExecutableProduct executableProduct, Guid sessionId)
         {
-            string jsonProduct = JsonConvert.SerializeObject(executableProduct);
+            string jsonProduct = _useEncryption
+                ? JsonConvert.SerializeObject(executableProduct, new EncryptedJsonConverter<ExecutableProduct>(_encryptionService, true))
+                : JsonConvert.SerializeObject(executableProduct);
 
             HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/Products/Emit/{sessionId}", new StringContent(jsonProduct, Encoding.UTF8, "application/json"));
 
@@ -161,7 +214,9 @@ namespace Sekure.Runtime
 
         public async Task<Policy> EmitWithPolicy(ExecutableProduct executableProduct, Guid sessionId)
         {
-            string jsonProduct = JsonConvert.SerializeObject(executableProduct);
+            string jsonProduct = _useEncryption
+                ? JsonConvert.SerializeObject(executableProduct, new EncryptedJsonConverter<ExecutableProduct>(_encryptionService, true))
+                : JsonConvert.SerializeObject(executableProduct);
 
             HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/v1/Products/Emit/{sessionId}", new StringContent(jsonProduct, Encoding.UTF8, "application/json"));
 
@@ -170,12 +225,12 @@ namespace Sekure.Runtime
                 throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
             }
 
-            string result = await response.Content.ReadAsStringAsync();
-            Policy policy = JsonConvert.DeserializeObject<Policy>(result, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
+            string emitProductJson = await response.Content.ReadAsStringAsync();
+
+            Policy policy = _useEncryption
+                ? JsonConvert.DeserializeObject<Policy>(emitProductJson, new EncryptedJsonConverter<QuotedProduct>(_encryptionService, false))
+                : JsonConvert.DeserializeObject<Policy>(emitProductJson, new JsonSerializerSettings
+                { NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore });
 
             return policy;
         }
@@ -222,11 +277,11 @@ namespace Sekure.Runtime
             }
 
             string policyJson = await response.Content.ReadAsStringAsync();
-            Policy policy = JsonConvert.DeserializeObject<Policy>(policyJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
+
+            Policy policy = _useEncryption
+                ? JsonConvert.DeserializeObject<Policy>(policyJson, new EncryptedJsonConverter<QuotedProduct>(_encryptionService, false))
+                : JsonConvert.DeserializeObject<Policy>(policyJson, new JsonSerializerSettings
+                { NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore });
 
             return policy;
         }
@@ -469,9 +524,9 @@ namespace Sekure.Runtime
 
         public async Task<string> ConfirmPayment(PaymentDetail paymentDetail)
         {
-            string jsonPaymentDetail = JsonConvert.SerializeObject(paymentDetail); 
-            HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/ConfirmPayment", new StringContent(jsonPaymentDetail, Encoding.UTF8, "application/json")); 
-            
+            string jsonPaymentDetail = JsonConvert.SerializeObject(paymentDetail);
+            HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/ConfirmPayment", new StringContent(jsonPaymentDetail, Encoding.UTF8, "application/json"));
+
             if (!response.IsSuccessStatusCode)
             {
                 throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
@@ -490,7 +545,7 @@ namespace Sekure.Runtime
                 throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
             }
 
-            string responsePayment = await response.Content.ReadAsStringAsync(); 
+            string responsePayment = await response.Content.ReadAsStringAsync();
             return responsePayment;
         }
 

@@ -1,12 +1,18 @@
-﻿using System;
+﻿using Sekure.Runtime.Security;
+using System;
 
 namespace Sekure.Models
 {
     public class Policy
     {
         public Guid SessionId { get; set; }
+
         public ProductDetail ProductDetail { get; set; }
+
+        [Encrypted]
         public PolicyHolder PolicyHolder { get; set; }
+
+        [Encrypted]
         public Quote ConfirmedQuote { get; set; }
 
         public Policy() { }
