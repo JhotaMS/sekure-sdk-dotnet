@@ -1,4 +1,6 @@
-﻿namespace Sekure.Models;
+﻿using System.Collections.Generic;
+
+namespace Sekure.Models;
 
 public class CoverageResultApi
 {
@@ -9,6 +11,7 @@ public class CoverageResultApi
     public string DeductibleResult { get; set; }
     public string IsAssistanceResult { get; set; }
     public string AmountInsurance { get; set; }
-
+    public bool ShowCoverage { get; set; }
+    public List<SubCoverage> SubCoverages { get; set; }
     public CoverageResultApi() { }
 }
