@@ -1,78 +1,46 @@
 ﻿using Sekure.Security;
 using System;
 
-namespace Sekure.Models;
-
-public class PolicyHolder
+namespace Sekure.Models
 {
-    [Encrypted]
-    public string FirstName { get; set; }
-
-    [Encrypted]
-    public string SecondName { get; set; }
-
-    [Encrypted]
-    public string LastName { get; set; }
-
-    [Encrypted]
-    public string SecondLastName { get; set; }
-
-    [Encrypted]
-    public string Gender { get; set; }
-
-    [Encrypted]
-    public string Address { get; set; }
-
-    [Encrypted]
-    public string IdentificationType { get; set; }
-
-    [Encrypted]
-    public string IdentificationNumber { get; set; }
-
-    [Encrypted]
-    public DateTime? Birthdate { get; set; }
-
-    [Encrypted]
-    public DateTime? ExpeditionDate { get; set; }
-
-    [Encrypted]
-    public string MaritalStatus { get; set; }
-
-    [Encrypted]
-    public string Email { get; set; }
-
-    [Encrypted]
-    public string PhoneNumber { get; set; }
-
-    [Encrypted]
-    public string CityCode { get; set; }
-
-    [Encrypted]
-    public string City { get; set; }
-
-    [Encrypted]
-    public string CompanyName { get; set; }
-
-    [Encrypted]
-    public string CompanyIdentificationNumber { get; set; }
-
-    [Encrypted]
-    public string CompanyEmail { get; set; }
-
-    [Encrypted]
-    public string CompanyPhone { get; set; }
-
-    [Encrypted]
-    public DateTime? CompanyDate { get; set; }
-
-    [Encrypted]
-    public string CompanyPostalCode { get; set; }
-
-    [Encrypted]
-    public string CompanyStreetNumber { get; set; }
-
-    [Encrypted]
-    public string CompanyAddress { get; set; }
+    public class PolicyHolder
+    {
+        public string FirstName { get; set; }
+        public string SecondName { get; set; }
+        public string LastName { get; set; }
+        public string SecondLastName { get; set; }
+        public string Gender { get; set; }
+        public string Address { get; set; }
+        public string IdentificationType { get; set; }
+        public string IdentificationNumber { get; set; }
+        public DateTime? Birthdate { get; set; }
+        public DateTime? ExpeditionDate { get; set; }
+        public string MaritalStatus { get; set; }
+        public string Email { get; set; }
+        public string PhoneNumber { get; set; }
+        public string CityCode { get; set; }
+        public string City { get; set; }
+        public string CompanyName { get; set; }
+        public string CompanyIdentificationNumber { get; set; }
+        public string CompanyEmail { get; set; }
+        public string CompanyPhone { get; set; }
+        public DateTime? CompanyDate { get; set; }
+        public string CompanyPostalCode { get; set; }
+        public string CompanyStreetNumber { get; set; }
+        public string CompanyAddress { get; set; }
+        public string CompanyCity { get; set; }
+        public string AddressTypeId { get; set; }
+        public string Nationality { get; set; }
+        public string PersonType { get; set; }
+        public string StreetNumber { get; set; }
+        public string CellNumber { get; set; }
+        public string Department { get; set; }
+        public string DepartmentCode { get; set; }
+        public string Birthplace { get; set; }
+        public string Neighborhood { get; set; }
+        public string CountryPlace { get; set; }
+        public string DepartmentPlace { get; set; }
+        public string CityPlace { get; set; }
 
     public PolicyHolder(
         string firstName
