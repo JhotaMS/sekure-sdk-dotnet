@@ -1,4 +1,4 @@
-﻿using Sekure.Runtime.Security;
+﻿using Sekure.Security;
 using System;
 
 namespace Sekure.Models;
