@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
 
-namespace Sekure.Models
+namespace Sekure.Models;
+
+public class BatchDiscovery
 {
-    public class BatchDiscovery
-    {
-        public BatchDetail BatchDetail { get; set; }
-        public List<InputParameter> Quote { get; set; }
-        public List<InputParameter> Confirm { get; set; }
-        public List<InputParameter> ToEmit { get; set; }
-    }
+    public BatchDetail BatchDetail { get; set; }
+    public List<InputParameter> Quote { get; set; }
+    public List<InputParameter> Confirm { get; set; }
+    public List<InputParameter> ToEmit { get; set; }
 }

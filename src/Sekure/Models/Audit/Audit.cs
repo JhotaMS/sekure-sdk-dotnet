@@ -1,13 +1,12 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Sekure.Models
+namespace Sekure.Models;
+
+public abstract class Audit
 {
-    public abstract class Audit
-    {
-        public int User { get; set; }
-        public DateTime CreationDate { get; set; }
-        [Timestamp]
-        public byte[] ModifiedDate { get; set; }
-    }
+    public int User { get; set; }
+    public DateTime CreationDate { get; set; }
+    [Timestamp]
+    public byte[] ModifiedDate { get; set; }
 }

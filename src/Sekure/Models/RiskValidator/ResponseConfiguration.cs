@@ -1,7 +1,6 @@
-﻿namespace Sekure.Models.RiskValidator
+﻿namespace Sekure.Models.RiskValidator;
+
+public class ResponseConfiguration
 {
-    public class ResponseConfiguration
-    {
-        public object Parameters { get; set; }
-    }
+    public object Parameters { get; set; }
 }

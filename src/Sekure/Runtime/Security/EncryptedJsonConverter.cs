@@ -3,77 +3,76 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Reflection;
 
-namespace Sekure.Runtime.Security
+namespace Sekure.Runtime.Security;
+
+public class EncryptedJsonConverter<T> : JsonConverter
 {
-    public class EncryptedJsonConverter<T> : JsonConverter
+    private readonly EncryptionService _encryptionService;
+    private readonly bool _isSerializing;
+
+    public EncryptedJsonConverter(
+        EncryptionService encryptionService
+        , bool isSerializing
+    )
     {
-        private readonly EncryptionService _encryptionService;
-        private readonly bool _isSerializing;
+        _encryptionService = encryptionService;
+        _isSerializing = isSerializing;
+    }
 
-        public EncryptedJsonConverter(
-            EncryptionService encryptionService
-            , bool isSerializing
-        )
+    public override bool CanConvert(
+        Type objectType
+    ) => objectType == typeof(T);
+
+    public override object ReadJson(
+        JsonReader reader
+        , Type objectType
+        , object existingValue
+        , JsonSerializer serializer
+    )
+    {
+        JObject obj = JObject.Load(reader);
+        var instance = Activator.CreateInstance(objectType);
+
+        foreach (var prop in objectType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
-            _encryptionService = encryptionService;
-            _isSerializing = isSerializing;
-        }
+            if (!prop.CanWrite) continue;
 
-        public override bool CanConvert(
-            Type objectType
-        ) => objectType == typeof(T);
+            var value = obj[prop.Name];
+            if (value == null) continue;
 
-        public override object ReadJson(
-            JsonReader reader
-            , Type objectType
-            , object existingValue
-            , JsonSerializer serializer
-        )
-        {
-            JObject obj = JObject.Load(reader);
-            var instance = Activator.CreateInstance(objectType);
+            object finalValue = value.ToObject(prop.PropertyType);
 
-            foreach (var prop in objectType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            if (prop.GetCustomAttribute<EncryptedAttribute>() != null && prop.PropertyType == typeof(string))
             {
-                if (!prop.CanWrite) continue;
-
-                var value = obj[prop.Name];
-                if (value == null) continue;
-
-                object finalValue = value.ToObject(prop.PropertyType);
-
-                if (prop.GetCustomAttribute<EncryptedAttribute>() != null && prop.PropertyType == typeof(string))
-                {
-                    finalValue = _encryptionService.Decrypt((string)finalValue);
-                }
-
-                prop.SetValue(instance, finalValue);
+                finalValue = _encryptionService.Decrypt((string)finalValue);
             }
 
-            return instance;
+            prop.SetValue(instance, finalValue);
         }
 
-        public override void WriteJson(
-            JsonWriter writer
-            , object value
-            , JsonSerializer serializer
-        )
+        return instance;
+    }
+
+    public override void WriteJson(
+        JsonWriter writer
+        , object value
+        , JsonSerializer serializer
+    )
+    {
+        JObject obj = new JObject();
+
+        foreach (var prop in value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
-            JObject obj = new JObject();
+            var val = prop.GetValue(value);
 
-            foreach (var prop in value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            if (prop.GetCustomAttribute<EncryptedAttribute>() != null && prop.PropertyType == typeof(string) && _isSerializing)
             {
-                var val = prop.GetValue(value);
-
-                if (prop.GetCustomAttribute<EncryptedAttribute>() != null && prop.PropertyType == typeof(string) && _isSerializing)
-                {
-                    val = _encryptionService.Encrypt((string)val);
-                }
-
-                obj.Add(prop.Name, val == null ? null : JToken.FromObject(val));
+                val = _encryptionService.Encrypt((string)val);
             }
 
-            obj.WriteTo(writer);
+            obj.Add(prop.Name, val == null ? null : JToken.FromObject(val));
         }
+
+        obj.WriteTo(writer);
     }
 }

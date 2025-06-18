@@ -10,7 +10,11 @@ namespace Sekure.Models
 
         public AskSekure() { }
 
-        public AskSekure(int productId, string productName, List<InputParameter> parameters)
+        public AskSekure(
+            int productId
+            , string productName
+            , List<InputParameter> parameters
+        )
         {
             ProductId = productId;
             ProductName = productName;

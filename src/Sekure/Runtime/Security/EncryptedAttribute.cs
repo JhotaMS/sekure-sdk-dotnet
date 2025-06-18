@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace Sekure.Runtime.Security
+namespace Sekure.Runtime.Security;
+
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
+public class EncryptedAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-    public class EncryptedAttribute : Attribute
-    {
-    }
 }
