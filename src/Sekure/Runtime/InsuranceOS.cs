@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Sekure.Models;
 using Sekure.Models.RiskValidator;
+using Sekure.Security;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,25 +38,59 @@ public class InsuranceOS : IInsuranceOS
 
         if (_useEncryption)
         {
-            _encryptionService = new EncryptionService(encryptionKey, encryptionIv);
-        }
-
-        public InsuranceOS(string apiUrl, string apiKey, string clientIpAddress, HttpClient client)
-        {
-            this.apiUrl = apiUrl;
-            this.apiKey = apiKey;
-            this.clientIpAddress = clientIpAddress;
-            _client = client;
+            _encryptionService = new EncryptionService(
+                encryptionKey
+                , encryptionIv
+            );
         }
     }
 
-        private HttpClient GetClient()
+    public InsuranceOS(
+        string apiUrl
+        , string apiKey
+        , string clientIpAddress
+        , HttpClient client
+        , bool useEncryption = false
+        , string encryptionKey = null
+        , string encryptionIv = null
+    )
+    {
+        this.apiUrl = apiUrl;
+        this.apiKey = apiKey;
+        this.clientIpAddress = clientIpAddress;
+
+        _client = client;
+        _useEncryption = useEncryption;
+
+        if (_useEncryption)
         {
-            _client.DefaultRequestHeaders.Add("skr-key", apiKey);
-            _client.DefaultRequestHeaders.Add("client-ip-address", clientIpAddress);
-            _client.Timeout = TimeSpan.FromMinutes(5);
-            return _client;
+            _encryptionService = new EncryptionService(
+                encryptionKey
+                , encryptionIv
+            );
         }
+    }
+
+    public InsuranceOS(
+        string apiUrl
+        , string apiKey
+        , string clientIpAddress
+        , HttpClient client
+    )
+    {
+        this.apiUrl = apiUrl;
+        this.apiKey = apiKey;
+        this.clientIpAddress = clientIpAddress;
+        _client = client;
+    }
+
+    private HttpClient GetClient()
+    {
+        _client.DefaultRequestHeaders.Add("skr-key", apiKey);
+        _client.DefaultRequestHeaders.Add("client-ip-address", clientIpAddress);
+        _client.Timeout = TimeSpan.FromMinutes(5);
+        return _client;
+    }
 
     #region Product
 
@@ -134,12 +169,12 @@ public class InsuranceOS : IInsuranceOS
             throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
 
-            string quotedProductJson = await response.Content.ReadAsStringAsync();
-            QuotedProduct quotedProduct = JsonConvert.DeserializeObject<QuotedProduct>(quotedProductJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
+        string quotedProductJson = await response.Content.ReadAsStringAsync();
+        QuotedProduct quotedProduct = JsonConvert.DeserializeObject<QuotedProduct>(quotedProductJson, new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore
+        });
 
         return quotedProduct;
     }
@@ -260,131 +295,131 @@ public class InsuranceOS : IInsuranceOS
         return policy;
     }
 
-        public async Task<IEnumerable<PresubscribedByIds>> GetProductsByTenant()
+    public async Task<IEnumerable<PresubscribedByIds>> GetProductsByTenant()
+    {
+        var response = await GetClient().GetAsync($"{apiUrl}/Products/ByTenant");
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await GetClient().GetAsync($"{apiUrl}/Products/ByTenant");
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
-
-            string responseJson = await response.Content.ReadAsStringAsync();
-            IEnumerable<PresubscribedByIds> presubscribeds = JsonConvert.DeserializeObject<IEnumerable<PresubscribedByIds>>(responseJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
-
-            return presubscribeds;
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
 
-        public async Task<CalculationInfoWithPaginator> GetCalculationInfoById(
-            IEnumerable<int?> calculationInfoTypeIds
-            , string searchterm
-            , int presubscribedId
-            , int? pageNumber
-            , int? pageSize
-        )
+        string responseJson = await response.Content.ReadAsStringAsync();
+        IEnumerable<PresubscribedByIds> presubscribeds = JsonConvert.DeserializeObject<IEnumerable<PresubscribedByIds>>(responseJson, new JsonSerializerSettings
         {
-            StringBuilder queryParams = new StringBuilder();
-            string CALCULATION_INFO_TYPE_IDS = "calculationInfoTypeIds";
-            string PAGE_NUMBER = "pageNumber";
-            string PAGE_SIZE = "pageSize";
-            string SEARCH_TERM = "searchterm";
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore
+        });
 
-            if (calculationInfoTypeIds.Any())
-                queryParams.Append($"{CALCULATION_INFO_TYPE_IDS}={string.Join(",", calculationInfoTypeIds)}");
+        return presubscribeds;
+    }
 
-            if (pageNumber != default(int))
-                queryParams.Append($"&{PAGE_NUMBER}={pageNumber}");
+    public async Task<CalculationInfoWithPaginator> GetCalculationInfoById(
+        IEnumerable<int?> calculationInfoTypeIds
+        , string searchterm
+        , int presubscribedId
+        , int? pageNumber
+        , int? pageSize
+    )
+    {
+        StringBuilder queryParams = new StringBuilder();
+        string CALCULATION_INFO_TYPE_IDS = "calculationInfoTypeIds";
+        string PAGE_NUMBER = "pageNumber";
+        string PAGE_SIZE = "pageSize";
+        string SEARCH_TERM = "searchterm";
 
-            if (pageSize != default(int))
-                queryParams.Append($"&{PAGE_SIZE}={pageSize}");
+        if (calculationInfoTypeIds.Any())
+            queryParams.Append($"{CALCULATION_INFO_TYPE_IDS}={string.Join(",", calculationInfoTypeIds)}");
 
-            if (!string.IsNullOrEmpty(searchterm))
-                queryParams.Append($"&{SEARCH_TERM}={searchterm}");
+        if (pageNumber != default(int))
+            queryParams.Append($"&{PAGE_NUMBER}={pageNumber}");
 
-            var response = await GetClient().GetAsync($"{apiUrl}/CalculationInfo/ListByPresubscribedId/{presubscribedId}?{queryParams}");
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
+        if (pageSize != default(int))
+            queryParams.Append($"&{PAGE_SIZE}={pageSize}");
 
-            string responseJson = await response.Content.ReadAsStringAsync();
-            CalculationInfoWithPaginator calculationsInfo = JsonConvert.DeserializeObject<CalculationInfoWithPaginator>(responseJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
+        if (!string.IsNullOrEmpty(searchterm))
+            queryParams.Append($"&{SEARCH_TERM}={searchterm}");
 
-            return calculationsInfo;
+        var response = await GetClient().GetAsync($"{apiUrl}/CalculationInfo/ListByPresubscribedId/{presubscribedId}?{queryParams}");
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
 
-        public async Task<IdUpdatedResponse> UpdateCalculationInfo(CalculationInfoUpdate calculationInfoUpdate)
+        string responseJson = await response.Content.ReadAsStringAsync();
+        CalculationInfoWithPaginator calculationsInfo = JsonConvert.DeserializeObject<CalculationInfoWithPaginator>(responseJson, new JsonSerializerSettings
         {
-            string jsonCalculationInfo = JsonConvert.SerializeObject(calculationInfoUpdate);
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore
+        });
 
-            HttpResponseMessage response = await GetClient().PutAsync($"{apiUrl}/CalculationInfo/Update", new StringContent(jsonCalculationInfo, Encoding.UTF8, "application/json"));
+        return calculationsInfo;
+    }
 
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
+    public async Task<IdUpdatedResponse> UpdateCalculationInfo(CalculationInfoUpdate calculationInfoUpdate)
+    {
+        string jsonCalculationInfo = JsonConvert.SerializeObject(calculationInfoUpdate);
 
-            string result = await response.Content.ReadAsStringAsync();
+        HttpResponseMessage response = await GetClient().PutAsync($"{apiUrl}/CalculationInfo/Update", new StringContent(jsonCalculationInfo, Encoding.UTF8, "application/json"));
 
-            IdUpdatedResponse idUpdatedResponse = JsonConvert.DeserializeObject<IdUpdatedResponse>(result, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
-
-            return idUpdatedResponse;
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
 
-        public async Task<IdCreateResponse> CreateCalculationInfo(CalculationInfo calculationInfo)
+        string result = await response.Content.ReadAsStringAsync();
+
+        IdUpdatedResponse idUpdatedResponse = JsonConvert.DeserializeObject<IdUpdatedResponse>(result, new JsonSerializerSettings
         {
-            string jsonCalculationInfo = JsonConvert.SerializeObject(calculationInfo);
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore
+        });
 
-            HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/CalculationInfo/Add", new StringContent(jsonCalculationInfo, Encoding.UTF8, "application/json"));
+        return idUpdatedResponse;
+    }
 
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
+    public async Task<IdCreateResponse> CreateCalculationInfo(CalculationInfo calculationInfo)
+    {
+        string jsonCalculationInfo = JsonConvert.SerializeObject(calculationInfo);
 
-            string result = await response.Content.ReadAsStringAsync();
+        HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/CalculationInfo/Add", new StringContent(jsonCalculationInfo, Encoding.UTF8, "application/json"));
 
-            IdCreateResponse idCreateResponse = JsonConvert.DeserializeObject<IdCreateResponse>(result, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
-
-            return idCreateResponse;
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
 
-        public async Task<IdDeletedResponse> DeleteCalculationInfo(int presubscribedId, int calculationInfoId)
+        string result = await response.Content.ReadAsStringAsync();
+
+        IdCreateResponse idCreateResponse = JsonConvert.DeserializeObject<IdCreateResponse>(result, new JsonSerializerSettings
         {
-            HttpResponseMessage response = await GetClient().DeleteAsync($"{apiUrl}/CalculationInfo/delete/presubscribedId={presubscribedId}&calculationInfoId={calculationInfoId}");
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore
+        });
 
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
+        return idCreateResponse;
+    }
 
-            string result = await response.Content.ReadAsStringAsync();
+    public async Task<IdDeletedResponse> DeleteCalculationInfo(int presubscribedId, int calculationInfoId)
+    {
+        HttpResponseMessage response = await GetClient().DeleteAsync($"{apiUrl}/CalculationInfo/delete/presubscribedId={presubscribedId}&calculationInfoId={calculationInfoId}");
 
-            IdDeletedResponse idDeletedResponse = JsonConvert.DeserializeObject<IdDeletedResponse>(result, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
-
-            return idDeletedResponse;
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
 
-        #endregion
+        string result = await response.Content.ReadAsStringAsync();
+
+        IdDeletedResponse idDeletedResponse = JsonConvert.DeserializeObject<IdDeletedResponse>(result, new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore
+        });
+
+        return idDeletedResponse;
+    }
+
+    #endregion
 
     #region ProductLot
     public async Task<BatchDiscovery> GetProductLotByName(string name)
@@ -620,45 +655,45 @@ public class InsuranceOS : IInsuranceOS
         return paymentGatewayProduct;
     }
 
-        public async Task<string> ConfirmPayment(PaymentDetail paymentDetail)
-        {
-            string jsonPaymentDetail = JsonConvert.SerializeObject(paymentDetail);
-            HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/ConfirmPayment", new StringContent(jsonPaymentDetail, Encoding.UTF8, "application/json"));
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
-
-        string responsePayment = await response.Content.ReadAsStringAsync(); return responsePayment;
-    }
-
-        public async Task<string> ConfirmPaymentV1(HttpRequest req)
-        {
-            string jsonReq = JsonConvert.SerializeObject(req);
-            HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/ConfirmPaymentV1", new StringContent(jsonReq, Encoding.UTF8, "application/json"));
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
-
-            string responsePayment = await response.Content.ReadAsStringAsync(); return responsePayment;
-        }
-
-        public async Task<string> UpdateSessionDetail(PaymentDetail paymentDetail)
-        {
-            string jsonPaymentDetail = JsonConvert.SerializeObject(paymentDetail);
-            HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/UpdateSessionDetail", new StringContent(jsonPaymentDetail, Encoding.UTF8, "application/json"));
+    public async Task<string> ConfirmPayment(PaymentDetail paymentDetail)
+    {
+        string jsonPaymentDetail = JsonConvert.SerializeObject(paymentDetail);
+        HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/ConfirmPayment", new StringContent(jsonPaymentDetail, Encoding.UTF8, "application/json"));
 
         if (!response.IsSuccessStatusCode)
         {
             throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
 
-            string responsePayment = await response.Content.ReadAsStringAsync();
-            return responsePayment;
+        string responsePayment = await response.Content.ReadAsStringAsync(); return responsePayment;
+    }
+
+    public async Task<string> ConfirmPaymentV1(HttpRequest req)
+    {
+        string jsonReq = JsonConvert.SerializeObject(req);
+        HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/ConfirmPaymentV1", new StringContent(jsonReq, Encoding.UTF8, "application/json"));
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
+
+        string responsePayment = await response.Content.ReadAsStringAsync(); return responsePayment;
+    }
+
+    public async Task<string> UpdateSessionDetail(PaymentDetail paymentDetail)
+    {
+        string jsonPaymentDetail = JsonConvert.SerializeObject(paymentDetail);
+        HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/UpdateSessionDetail", new StringContent(jsonPaymentDetail, Encoding.UTF8, "application/json"));
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
+        }
+
+        string responsePayment = await response.Content.ReadAsStringAsync();
+        return responsePayment;
+    }
 
     public async Task<string> SessionByNroElctronico(PaymentDetail paymentDetail)
     {
@@ -670,23 +705,23 @@ public class InsuranceOS : IInsuranceOS
             throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
 
-            string responsePayment = await response.Content.ReadAsStringAsync();
-            return responsePayment;
-        }
+        string responsePayment = await response.Content.ReadAsStringAsync();
+        return responsePayment;
+    }
 
-        public async Task<string> GetSessionByTransactionSkrId(string transactionSkrId)
+    public async Task<string> GetSessionByTransactionSkrId(string transactionSkrId)
+    {
+        HttpResponseMessage response = await GetClient().GetAsync($"{apiUrl}/GetSessionByTransactionSkrId/{transactionSkrId}");
+
+        if (!response.IsSuccessStatusCode)
         {
-            HttpResponseMessage response = await GetClient().GetAsync($"{apiUrl}/GetSessionByTransactionSkrId/{transactionSkrId}");
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
-
-            string responsePayment = await response.Content.ReadAsStringAsync();
-            return responsePayment;
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
-        #endregion
+
+        string responsePayment = await response.Content.ReadAsStringAsync();
+        return responsePayment;
+    }
+    #endregion
 
     #region AskSekure
     public async Task<string> AskSekure(object parameters, int productId, string productName)
@@ -745,38 +780,37 @@ public class InsuranceOS : IInsuranceOS
         return Configuration;
     }
 
-        public async Task<ValidationProcess> ValidateStatus(RequestExecutable requestExecutable, Guid sessionId)
+    public async Task<ValidationProcess> ValidateStatus(RequestExecutable requestExecutable, Guid sessionId)
+    {
+        string jsonRequestExecutable = JsonConvert.SerializeObject(requestExecutable);
+        HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/SKR/ValidateStatus/{sessionId}", new StringContent(jsonRequestExecutable, Encoding.UTF8, "application/json"));
+        if (!response.IsSuccessStatusCode)
         {
-            string jsonRequestExecutable = JsonConvert.SerializeObject(requestExecutable);
-            HttpResponseMessage response = await GetClient().PostAsync($"{apiUrl}/SKR/ValidateStatus/{sessionId}", new StringContent(jsonRequestExecutable, Encoding.UTF8, "application/json"));
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
-            string responseJson = await response.Content.ReadAsStringAsync();
-            ValidationProcess executableRiskValidator = JsonConvert.DeserializeObject<ValidationProcess>(responseJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
-            return executableRiskValidator;
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
         }
-
-        public async Task<ValidationProcess> RiskStatusByProduct(string productName, Guid sessionId)
+        string responseJson = await response.Content.ReadAsStringAsync();
+        ValidationProcess executableRiskValidator = JsonConvert.DeserializeObject<ValidationProcess>(responseJson, new JsonSerializerSettings
         {
-            HttpResponseMessage response = await GetClient().GetAsync($"{apiUrl}/SKR/RiskStatusByProduct/{productName}/{sessionId}");
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
-            }
-            string responseJson = await response.Content.ReadAsStringAsync();
-            ValidationProcess executableRiskValidator = JsonConvert.DeserializeObject<ValidationProcess>(responseJson, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            });
-            return executableRiskValidator;
-        }
-        #endregion
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore
+        });
+        return executableRiskValidator;
     }
+
+    public async Task<ValidationProcess> RiskStatusByProduct(string productName, Guid sessionId)
+    {
+        HttpResponseMessage response = await GetClient().GetAsync($"{apiUrl}/SKR/RiskStatusByProduct/{productName}/{sessionId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"statusCode: {response.StatusCode}, messageException: {response.Content.ReadAsStringAsync().Result}");
+        }
+        string responseJson = await response.Content.ReadAsStringAsync();
+        ValidationProcess executableRiskValidator = JsonConvert.DeserializeObject<ValidationProcess>(responseJson, new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore
+        });
+        return executableRiskValidator;
+    }
+    #endregion
 }

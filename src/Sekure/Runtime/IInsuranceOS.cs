@@ -130,20 +130,20 @@ public interface IInsuranceOS
     /// <param name="sessionId">This is the session id with which the quote was registered.</param>
     Task<Estimate> GetEstimateBySessionId(Guid sessionId);
 
-        /// <summary>
-        /// Allows to obtain the configuration that we must use for the payment gateway that is going to be used
-        /// </summary>
-        /// /// <param name="paymentGatewayName">Name of the payment gateway</param>
-        /// <param name="productName">product name of the payment gateway</param>
-        Task<PaymentGatewayProduct> GetPaymentGatewayConfiguration(string paymentGatewayName, string productName);
-        Task<string> GetSessionByTransactionSkrId(string transactionSkrId);
-        /// <summary>
-        /// Start a payment session with the chosen gateway returns the url where the payment can be made.
-        /// Send a PostAsync request to InsuranceOS API./>.
-        /// </summary>
-        /// /// <param name="paymentDetail">Important payment detail. 
-        /// The object type property allows to be configured to any object that is necessary to start a session in any of the gateways that sekure has.</param>
-        Task<string> Pay(PaymentDetail paymentDetail);
+    /// <summary>
+    /// Allows to obtain the configuration that we must use for the payment gateway that is going to be used
+    /// </summary>
+    /// /// <param name="paymentGatewayName">Name of the payment gateway</param>
+    /// <param name="productName">product name of the payment gateway</param>
+    Task<PaymentGatewayProduct> GetPaymentGatewayConfiguration(string paymentGatewayName, string productName);
+    Task<string> GetSessionByTransactionSkrId(string transactionSkrId);
+    /// <summary>
+    /// Start a payment session with the chosen gateway returns the url where the payment can be made.
+    /// Send a PostAsync request to InsuranceOS API./>.
+    /// </summary>
+    /// /// <param name="paymentDetail">Important payment detail. 
+    /// The object type property allows to be configured to any object that is necessary to start a session in any of the gateways that sekure has.</param>
+    Task<string> Pay(PaymentDetail paymentDetail);
 
     /// <summary>
     /// Generate a session token or information necessary for the payment to be made.
@@ -204,20 +204,20 @@ public interface IInsuranceOS
     /// <param name="paymentDetail">Important payment detail. 
     Task<string> ConfirmPayment(PaymentDetail paymentDetail);
 
-        /// <summary>
-        /// Confirm a payment version 1.
-        /// Send a PostAsync request to InsuranceOS API./>.
-        /// </summary>
-        /// <param name="req">Important http request. 
-        Task<string> ConfirmPaymentV1(HttpRequest req);
+    /// <summary>
+    /// Confirm a payment version 1.
+    /// Send a PostAsync request to InsuranceOS API./>.
+    /// </summary>
+    /// <param name="req">Important http request. 
+    Task<string> ConfirmPaymentV1(HttpRequest req);
 
-        /// <summary>
-        /// Returns information about the status of the payment of the policy.
-        /// Send a PostAsync request to InsuranceOS API./>.
-        /// </summary>
-        /// /// <param name="paymentDetail">Important payment detail. 
-        /// The object type property allows to be configured to any object that is necessary to get payment status in any of the gateways that sekure has.</param>
-        Task<string> UpdateSessionDetail(PaymentDetail paymentDetail);
+    /// <summary>
+    /// Returns information about the status of the payment of the policy.
+    /// Send a PostAsync request to InsuranceOS API./>.
+    /// </summary>
+    /// /// <param name="paymentDetail">Important payment detail. 
+    /// The object type property allows to be configured to any object that is necessary to get payment status in any of the gateways that sekure has.</param>
+    Task<string> UpdateSessionDetail(PaymentDetail paymentDetail);
 
     /// <summary>
     /// Return relevant information on the policy through the electronic number
@@ -234,58 +234,57 @@ public interface IInsuranceOS
     /// <param name="sessionId">This is the session id with which the quote was registered /// </param>
     Task<Policy> GetProductDetailsBySessionId(Guid sessionId);
 
-        /// <summary>
-        /// This method is responsible for performing risk validations with tertiary entities before issuing the catalog products. 
-        /// A product can have one or more validators, in case the validator requires information, it dynamically requests it from the end user
-        /// </summary>
-        /// <param name="requestExecutable">This is the object needed to execute the function /// </param>
-        /// <param name="sessionId">This is the session id with which the quote was registered /// </param>
-        Task<ValidationProcess> ValidateStatus(RequestExecutable requestExecutable, Guid sessionId);
-        Task<ValidationProcess> RiskStatusByProduct(string productName, Guid sessionId);
+    /// <summary>
+    /// This method is responsible for performing risk validations with tertiary entities before issuing the catalog products. 
+    /// A product can have one or more validators, in case the validator requires information, it dynamically requests it from the end user
+    /// </summary>
+    /// <param name="requestExecutable">This is the object needed to execute the function /// </param>
+    /// <param name="sessionId">This is the session id with which the quote was registered /// </param>
+    Task<ValidationProcess> ValidateStatus(RequestExecutable requestExecutable, Guid sessionId);
+    Task<ValidationProcess> RiskStatusByProduct(string productName, Guid sessionId);
 
-        /// <summary>
-        /// Gets the products assigned to the client
-        /// Send a GetProductsByTenant request to InsuranceOS API./>.
-        /// </summary>
-        Task<IEnumerable<PresubscribedByIds>> GetProductsByTenant();
+    /// <summary>
+    /// Gets the products assigned to the client
+    /// Send a GetProductsByTenant request to InsuranceOS API./>.
+    /// </summary>
+    Task<IEnumerable<PresubscribedByIds>> GetProductsByTenant();
 
-        /// <summary>
-        /// Gets all calculationInfo with paginator for a specific product
-        /// Send a GetCalculationInfoById request to InsuranceOS API./>.
-        /// </summary>
-        /// <param name="calculationInfoTypeIds">Ids the calculation infos.</param>
-        /// <param name="searchterm">Input the search by name and descriptions.</param>
-        /// <param name="presubscribedId">This is the product id.</param>
-        /// <param name="pageNumber">Number of pages the pagination.</param>
-        /// <param name="pageSize">Size of pages the pagination.</param>
-        Task<CalculationInfoWithPaginator> GetCalculationInfoById(
-            IEnumerable<int?> calculationInfoTypeIds
-            , string searchterm
-            , int presubscribedId
-            , int? pageNumber
-            , int? pageSize
-        );
+    /// <summary>
+    /// Gets all calculationInfo with paginator for a specific product
+    /// Send a GetCalculationInfoById request to InsuranceOS API./>.
+    /// </summary>
+    /// <param name="calculationInfoTypeIds">Ids the calculation infos.</param>
+    /// <param name="searchterm">Input the search by name and descriptions.</param>
+    /// <param name="presubscribedId">This is the product id.</param>
+    /// <param name="pageNumber">Number of pages the pagination.</param>
+    /// <param name="pageSize">Size of pages the pagination.</param>
+    Task<CalculationInfoWithPaginator> GetCalculationInfoById(
+        IEnumerable<int?> calculationInfoTypeIds
+        , string searchterm
+        , int presubscribedId
+        , int? pageNumber
+        , int? pageSize
+    );
 
-        /// <summary>
-        /// Update calculationInfo
-        /// Send a UpdateCalculationInfo request to InsuranceOS API./>.
-        /// </summary>
-        /// <param name="calculationInfoUpdate">This is the data new canculation.</param>
-        Task<IdUpdatedResponse> UpdateCalculationInfo(CalculationInfoUpdate calculationInfoUpdate);
+    /// <summary>
+    /// Update calculationInfo
+    /// Send a UpdateCalculationInfo request to InsuranceOS API./>.
+    /// </summary>
+    /// <param name="calculationInfoUpdate">This is the data new canculation.</param>
+    Task<IdUpdatedResponse> UpdateCalculationInfo(CalculationInfoUpdate calculationInfoUpdate);
 
-        /// <summary>
-        /// Create calculationInfo
-        /// Send a CreateCalculationInfo request to InsuranceOS API./>.
-        /// </summary>
-        /// <param name="calculationInfo">This is the data new canculation.</param>
-        Task<IdCreateResponse> CreateCalculationInfo(CalculationInfo calculationInfo);
+    /// <summary>
+    /// Create calculationInfo
+    /// Send a CreateCalculationInfo request to InsuranceOS API./>.
+    /// </summary>
+    /// <param name="calculationInfo">This is the data new canculation.</param>
+    Task<IdCreateResponse> CreateCalculationInfo(CalculationInfo calculationInfo);
 
-        /// <summary>
-        /// Delete calculationInfo
-        /// Send a DeleteCalculationInfo request to InsuranceOS API./>.
-        /// </summary>
-        /// <param name="presubscribedId">This is the product id.</param>
-        /// <param name="presubscribedId">This is the calculationInfo id.</param>
-        Task<IdDeletedResponse> DeleteCalculationInfo(int presubscribedId, int calculationInfoId);
-    }
+    /// <summary>
+    /// Delete calculationInfo
+    /// Send a DeleteCalculationInfo request to InsuranceOS API./>.
+    /// </summary>
+    /// <param name="presubscribedId">This is the product id.</param>
+    /// <param name="presubscribedId">This is the calculationInfo id.</param>
+    Task<IdDeletedResponse> DeleteCalculationInfo(int presubscribedId, int calculationInfoId);
 }
