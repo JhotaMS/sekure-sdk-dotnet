@@ -7,8 +7,8 @@ public class EncryptionOptions
     public string Iv { get; set; }
     public bool Active { get; set; }
 
-    public class FACT
+    public static class FACT
     {
-        public string SECTION_NAME = ENCRYPTION;
+        public readonly static string SECTION_NAME = ENCRYPTION;
     }
 }
